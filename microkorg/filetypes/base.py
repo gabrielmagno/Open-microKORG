@@ -263,10 +263,8 @@ def decode_patch(data):
     decode_patterns(patch, data, PATTERNS_PATCH)
     return patch
 
-def encode_patch(data):
-    patch = synthesizer.Patch()
-    decode_patterns(patch, data, PATTERNS_PATCH)
-    return patch
+def encode_patch(patch, data):
+    encode_patterns(patch, data, PATTERNS_PATCH)
 
 def decode_timbre(data):
     timbre = synthesizer.Timbre()
@@ -274,6 +272,13 @@ def decode_timbre(data):
     timbre.patches = [decode_patch(data) for i in range(4)]
     data.read("bytes:56")
     return timbre
+
+def encode_timbre(timbre, data):
+    encode_patterns(timbre, data, PATTERNS_TIMBRE)
+    assert len(timbre.patches) == 4
+    for patch in timbre.patches:
+        encode_patch(patch, data)
+    data.append(bitstring.pack("bytes:56", 0))
 
 def decode_channels(data):
     channels = [ synthesizer.Channel() for i in range(16) ]
@@ -283,11 +288,24 @@ def decode_channels(data):
         decode_patterns(channels[i], data, PATTERNS_CHANNEL_PAN)
     return channels
 
+def encode_channels(channels, data):
+    assert len(channels) == 16
+    for channel in channels:
+        encode_patterns(channel, data, PATTERNS_CHANNEL_LEVEL)
+    for channel in channels:
+        encode_patterns(channel, data, PATTERNS_CHANNEL_PAN)
+
 def decode_vocoder(data):
     vocoder = synthesizer.Vocoder()
     decode_patterns(vocoder, data, PATTERNS_VOCODER)
     vocoder.channels = decode_channels(data)
     data.read("bytes:138") # TODO
+    return vocoder
+
+def encode_vocoder(vocoder, data):
+    encode_patterns(vocoder, data, PATTERNS_VOCODER)
+    encode_channels(vocoder.channels, data)
+    data.append(bitstring.pack("bytes:138", 0))
     return vocoder
 
 
@@ -332,6 +350,23 @@ class Base(FileType):
 
         name_encoded = "{:<12}".format(prog.name).encode("ascii", errors="replace")[:12]
         data.append(bitstring.pack("bytes:12", name_encoded))
+
+        encode_patterns(prog, data, PATTERNS_PROGRAM)
+
+        if prog.voice_mode.value in ["Single", "Layer"]:
+
+            encode_timbre(prog.timbres[0], data)
+
+            if prog.voice_mode.value == "Layer":
+                encode_timbre(prog.timbres[1], data)
+            else:
+                data.append(bitstring.pack("bytes:108", 0))
+    
+        elif prog.voice_mode.value == "Vocoder":
+            encode_vocoder(prog.vocoder, data)
+           
+        else:
+            print("ERROR")
 
         return data
     
