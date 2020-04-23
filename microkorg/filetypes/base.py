@@ -236,6 +236,15 @@ def decode_patterns(obj, data, patterns):
                 #print("WARNING: {} != {}".format(temp, value))
                 pass
 
+def encode_patterns(obj, data, patterns):
+    for field, pattern, value in patterns:
+        if field:
+            raw_value = getattr(obj, field).get_raw()
+            new_data = bitstring.pack(pattern, raw_value)
+        else:
+            new_data = bitstring.pack(pattern, value)
+        data.append(new_data)
+
 def decode_8to7(data_encoded):
     data = bytearray()
     for ptr in range(0, len(data_encoded), 8):
@@ -250,6 +259,11 @@ def decode_8to7(data_encoded):
 
 
 def decode_patch(data):
+    patch = synthesizer.Patch()
+    decode_patterns(patch, data, PATTERNS_PATCH)
+    return patch
+
+def encode_patch(data):
     patch = synthesizer.Patch()
     decode_patterns(patch, data, PATTERNS_PATCH)
     return patch
@@ -310,8 +324,14 @@ class Base(FileType):
  
         return prog
 
-    
-     #def encode(program):
-     #    data = None
-     #    return data
+   
+    #TODO
+    def encode(prog):
+        #data = bytearray()
+        data = bitstring.BitStream()
 
+        name_encoded = "{:<12}".format(prog.name).encode("ascii", errors="replace")[:12]
+        data.append(bitstring.pack("bytes:12", name_encoded))
+
+        return data
+    
