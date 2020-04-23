@@ -9,6 +9,12 @@ class Parameter:
     def __str__(self):
         return "{}".format(self.value)
 
+    def get_raw(self):
+        return self.raw
+
+    def get_value(self):
+        return self.value
+
 
 class ParamSimple(Parameter):
 
