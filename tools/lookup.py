@@ -40,7 +40,7 @@ osc2_waves        = ["Saw", "Square", "Triangle"]
 
 filter_type       = ["-24dB LP", "-12dB LP",  "-12dB BP",  "-12dB HP"]
 
-lfo_sync          = ["Off", "Timbre", "Voice"]
+lfo_sync          = ["OFF", "Timbre", "Voice"]
 
 lfo1_waves        = ["Saw", "Square", "Triangle", "S&H"]
 
@@ -48,6 +48,17 @@ lfo2_waves        = ["Saw", "Squ+", "Sine", "S&H"]
 
 lfo_sync_note     = ["1/1", "3/4", "2/3", "1/2", "3/8", "1/3", "1/4", "3/16", 
                      "1/6", "1/8", "3/32", "1/12", "1/16", "1/24", "1/32"]
+
+patch_source      = ["EG1", "EG2", "LFO1", "LFO2", "Velocity",
+                     "Key Track", "Bend", "Mod Wheel"]
+
+patch_destination = ["Pitch", "Osc2 Pitch", "Ctl1", "Noise", 
+                     "Cutoff", "Amp", "Pan", "LFO2 Freq"]
+
+formant_shift = ["0", "+1", "+2", "-1", "-2"]
+
+fcmod_source = ["---", "Amp EG", "LFO 1", "LFO 2", "Velocity", 
+                "Key Track", "Bend", "Mod Wheel"]
 
 def re_range(raw_value, range_max, center=64):
     value = raw_value - center
@@ -60,4 +71,13 @@ def re_range(raw_value, range_max, center=64):
 
 def re_range2(raw_value, range_max, center=64):
     return raw_value if raw_value <= range_max else (raw_value - (256-center))
+
+def decode_pan(raw_value):
+    value = re_range(raw_value, 64)
+    if value == 0:
+        return "CNT"
+    elif value < 0:
+        return "L{}".format(-value)
+    else:
+        return "R{}".format(value)
 
